@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
+
         <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css" />
-        
         <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
         <py-env>
             - numpy
@@ -17,45 +17,39 @@
             import matplotlib.pyplot as plt
             import numpy as np
         
-            TMAX = 24
+            TMAX = 72
             TRATE = TMAX
                
             def PK1(*args, **kwargs) : #골수에 직접 투여
                 try :
                     A0 = float(Element("A_zero").value)
                     w = float(Element("Weight").value)
-                    T = float(Element("Time_rate").value)
-                    N = float(Element("Total_N").value)
-                    trash = A0+w+T+N
-
                     ke = 0.28 # 약물제거 속도 상수
-                    ka = 1.8 # 약물흡수의 1차 반응 속도
-                    V = 0.6*w # 혈액 부피
-                    CL = V*ke # 약물이 이용될 수 있는 부피
-                    F = 0.89 # 생체 이용률
-                    Cmax = (F*A0/V)*np.exp(-ke*((1/ka-ke)*np.log(ka/ke)))
+                    V = 0.6*w # 혈액 부피   
+                    Age = int(Element("AGE").value)       
                 except :
                     return 0
-
                 t = np.linspace(0,TMAX,TRATE)
                 y = (A0/V)*np.exp(-ke*t)
                 fig, ax = plt.subplots()
                 ax.plot(t,y)
+
+                ax.plot(t,np.linspace(10,10,TMAX),"r")
+                ax.plot(t,np.linspace(20,20,TMAX),"r")
+                plt.title('Marrow Injection (PK)')
+                plt.xlabel('time (h)')
+                plt.ylabel('plasma concentration (mg/L)')
                 pyscript.write("PK1",fig)
+
             def PK2(*args, **kwargs) : #약을 일번적으로 복용
                 try :
                     A0 = float(Element("A_zero").value)
                     w = float(Element("Weight").value)
-                    T = float(Element("Time_rate").value)
-                    N = float(Element("Total_N").value)
-                    trash = A0+w+T+N
-
+                    Age = int(Element("AGE").value)
                     ke = 0.28 # 약물제거 속도 상수
                     ka = 1.8 # 약물흡수의 1차 반응 속도
                     V = 0.6*w # 혈액 부피
-                    CL = V*ke # 약물이 이용될 수 있는 부피
                     F = 0.89 # 생체 이용률
-                    Cmax = (F*A0/V)*np.exp(-ke*((1/ka-ke)*np.log(ka/ke)))
                 except :
                     return 0
                 t = np.linspace(0,TMAX,TRATE)
@@ -63,7 +57,11 @@
 
                 fig, ax = plt.subplots()
                 ax.plot(t,y)
-                
+                ax.plot(t,np.linspace(10,10,TMAX),"r")
+                ax.plot(t,np.linspace(20,20,TMAX),"r")
+                plt.title('Oral Injection (PK)')
+                plt.xlabel('time (h)')
+                plt.ylabel('plasma concentration (mg/L)')
                 pyscript.write("PK2",fig)
             def PK3(*args, **kwargs) : #약물의 Multiple dosing
                 try :
@@ -71,14 +69,11 @@
                     w = float(Element("Weight").value)
                     T = float(Element("Time_rate").value)
                     N = float(Element("Total_N").value)
-                    trash = A0+w+T+N
-
+                    Age = int(Element("AGE").value)
                     ke = 0.28 # 약물제거 속도 상수
-                    ka = 1.8 # 약물흡수의 1차 반응 속도
                     V = 0.6*w # 혈액 부피
                     CL = V*ke # 약물이 이용될 수 있는 부피
                     F = 0.89 # 생체 이용률
-                    Cmax = (F*A0/V)*np.exp(-ke*((1/ka-ke)*np.log(ka/ke)))
                 except :
                     return 0
                 t = np.linspace(0,TMAX,TRATE)
@@ -86,7 +81,11 @@
 
                 fig, ax = plt.subplots()
                 ax.plot(t,y)
-                
+                ax.plot(t,np.linspace(10,10,TMAX),"r")
+                ax.plot(t,np.linspace(20,20,TMAX),"r")
+                plt.title('Drug Single dosing (PK)')
+                plt.xlabel('time (h)')
+                plt.ylabel('plasma concentration (mg/L)')
                 pyscript.write("PK3",fig)
             def PK3_(*args, **kwargs) : #약물의 Multiple dosing
                 try :
@@ -94,29 +93,32 @@
                     w = float(Element("Weight").value)
                     T = float(Element("Time_rate").value)
                     N = float(Element("Total_N").value)
-                    trash = A0+w+T+N
-
+                    Age = int(Element("AGE").value)
                     ke = 0.28 # 약물제거 속도 상수
                     ka = 1.8 # 약물흡수의 1차 반응 속도
                     V = 0.6*w # 혈액 부피
-                    CL = V*ke # 약물이 이용될 수 있는 부피
                     F = 0.89 # 생체 이용률
-                    Cmax = (F*A0/V)*np.exp(-ke*((1/ka-ke)*np.log(ka/ke)))
                 except :
                     return 0
                 t = np.linspace(0,TMAX,TRATE)
 
-                Coral = ((F*A0/T)/CL)*(1-np.exp(-(CL/V)*t))
+                
                 y = []
                 for i in range(0,TMAX) :
                     ret = 0
                     for j in range(0,int(N)) :
-                        ret = ret+Coral[np.abs(int(i-j*T))]
+                            if i-j*T>0 :
+                                ret = ret+ ((ka*F*A0)/(V*(ka-ke)))*(np.exp(-ke*(i-j*T))-np.exp(-ka*(i-j*T)))
+                        
                     y.append(ret)
                 y = np.array(y)
                 fig, ax = plt.subplots()
                 ax.plot(t,y)
-                
+                ax.plot(t,np.linspace(10,10,TMAX),"r")
+                ax.plot(t,np.linspace(20,20,TMAX),"r")
+                plt.title('Drug Multiple dosing (PK)')
+                plt.xlabel('time (h)')
+                plt.ylabel('plasma concentration (mg/L)')
                 pyscript.write("PK3_",fig)
             def PK4(*args, **kwargs) : #약물 복용의 Effect
                 try :
@@ -125,8 +127,6 @@
                     T = float(Element("Time_rate").value)
                     N = float(Element("Total_N").value)
                     Age = float(Element("AGE").value)
-                    trash = A0+w+T+N
-
                     Emax = 5.5
                     EC50 = 13.1-0.148*(Age-40)
                     ke = 0.28 # 약물제거 속도 상수
@@ -143,8 +143,13 @@
                 
                 fig, ax = plt.subplots()
                 ax.plot(t,y)
-                
+                ax.plot(t,np.linspace(10,10,TMAX),"r")
+                ax.plot(t,np.linspace(20,20,TMAX),"r")
+                plt.title('Drug Effect (PK)')
+                plt.xlabel('time (h)')
+                plt.ylabel('plasma concentration (mg/L)')
                 pyscript.write("PK4",fig)
+                pyscript.write("CMAX","Cmax : "+str(Cmax))
             def createPlot(*args, **kwargs):
                 Element("errormassage").clear()
                 try :
@@ -161,22 +166,36 @@
         
 
         <main class="container">
+            <h5>빨간선 밖으로 혈중 아세트아미노펜 농도가 벗어나게 될 경우, 이는 약물이 적절하게 사용되지 않는 것입니다. 빨간선보다 낮은 혈중 아세트아미노펜 농도에서는 진통제 효과가 충분히 나타나지 않고, 높은 경우 약물 과다 복용으로 인한 문제가 발생하게 됩니다.</h5>
             <h1 id="errormassage"></h1>
-            <div style="display:grid; grid-template-columns:600px 600px">
+            <div style="display:grid; grid-template-columns:300px 10px 300px 10px 300px 10px 300px">
                 <div id="PK1"></div>
+                <div></div>
                 <div id="PK2"></div>
+                <div></div>
                 <div id="PK3"></div>
-                <div id="PK3_"></div>
+                <div></div>
                 <div id="PK4"></div>
             </div>
+            <br><br>
+            <div style="display:grid; grid-template-columns:700px 20px 350px">
+                <div id="PK3_"></div>
+                <div></div>
+                <h3 id="CMAX"></h1>
+            </div>
+            
             <br>
             <div style="display:grid; grid-template-columns:600px 600px">
-                <input type="number" id="A_zero" placeholder="약물의 투여량(g)" style = "width:90%">
+                <input type="number" id="A_zero" placeholder="약물의 투여량(mg)" style = "width:90%">
                 <input type="number" id="Weight" placeholder="몸무게(kg)" style = "width:90%">
                 <input type="number" id="Time_rate" placeholder="약물 복용 시간 간격(h)" style = "width:90%">
                 <input type="number" id="Total_N" placeholder="약물 총 복용 횟수"  style = "width:90%">
                 <input type="number" id="AGE" placeholder="나이"  style = "width:90%">
                 <button id = "gogogo" pys-onClick ="createPlot" style = "width:90%">GO!</button>
+            </div>
+            <div style="display:grid; grid-template-columns:200px 20px 700px">
+                <button onclick="location.href='description.html'">설명 보기</button>
+                
             </div>
             
         </main>
